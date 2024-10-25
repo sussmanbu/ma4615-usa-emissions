@@ -1,0 +1,65 @@
+---
+title: "USA Emissions Data: Modeling Activity"
+author: "Daniel Sussman"
+format: gfm
+---
+
+We're going to be looking at data that collected as part of a study on environmental justice and harmful emissions.
+An article in [Nature Communications](https://www.nature.com/articles/s41467-023-43492-9) details the results of the study.
+
+The data for this study as well as (most of?) the code for the analysis can be found on [Github](https://github.com/yanellinunez/USA_emissions_code).
+We created a simplified version of the dataset for us to explore.
+
+
+```{r}
+suppressPackageStartupMessages(library(tidyverse))
+nox_df <- read_rds("USA_emissions_simple.rds")
+nox_df
+```
+
+
+
+
+We want to explore the relationship between the race percentage variables and the variable `nox_energy_relat_chg`.
+We can recompute the difference and relative change using these equations.
+
+```{r}
+nox_df |> 
+  select(gisjoin, year, starts_with("nox_ener")) |> 
+  filter(gisjoin == nth(gisjoin, 10)) |> 
+  mutate(d = lead(nox_ener) - nox_ener, t = nox_energy_diff / nox_ener * 100)
+```
+
+The `nox_energy_relat_chg` variable, gives the relative change in NOx pollutants from the year to year + 10.
+
+Let's plot the NOx energy relative change versus the `perc_white` variable.
+
+
+```{r}
+ggplot(nox_df)
+```
+
+
+
+
+```{r}
+ggplot(nox_df, aes(x = perc_white, y = nox_energy_relat_chg)) + 
+  geom_smooth() +
+  scale_x_sqrt()
+```
+
+We'll create an initial training/testing split and then fit a model with `nox_energy_relat_chg` as our response variable and `perc_white` as our predictor variable.
+
+```{r}
+library(tidymodels)
+split <- initial_split(nox_df, prop = .8)
+training<- training(split)
+```
+
+### Evaluating model assumptions
+
+Use `ggplot` and `broom::augment` to recreate the first two plots below.
+
+```{r}
+plot(mod1)
+```
